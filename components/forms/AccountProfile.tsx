@@ -5,7 +5,7 @@ import {useForm} from "react-hook-form";
 import {usePathname, useRouter} from "next/navigation";
 import {ChangeEvent, useState} from "react";
 import {zodResolver} from "@hookform/resolvers/zod";
-
+import {useUploadThing} from "@/lib/validations/user";
 import {
   Form,
   FormControl,
@@ -18,6 +18,7 @@ import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
 import {UserValidation} from "@/lib/validations/user";
 import {Textarea} from "../ui/textarea";
+import {isBase64Image} from "@/lib/utils";
 
 interface Props {
   user: {
@@ -33,6 +34,7 @@ interface Props {
 
 const AccountProfile = ({user, btnTitle}: Props) => {
   const [files, setFiles] = useState<File[]>([]);
+  const {startUpload} = useUploadThing("media");
   const form = useForm({
     resolver: zodResolver(UserValidation),
     defaultValues: {
@@ -67,7 +69,21 @@ const AccountProfile = ({user, btnTitle}: Props) => {
   };
 
   const onSubmit = async (values: z.infer<typeof UserValidation>) => {
-    console.log(values);
+    const blob = values.profile_photo;
+
+    const hasImageChanged = isBase64Image(blob);
+
+    if (hasImageChanged) {
+      const imgRes = await startUpload(files);
+
+      if (imgRes && imgRes[0].fileUrl) {
+        values.profile_photo = imgRes[0].fileUrl;
+      }
+    }
+
+    // update user profile
+
+    
   };
   return (
     <Form {...form}>
